@@ -1,4 +1,4 @@
-package deyi.smswatcher;
+package com.netroby.smswatcher;
 
 import android.app.Activity;
 import android.content.IntentFilter;
@@ -12,7 +12,7 @@ public class SmswatcherActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         TextView tv = new TextView(this);
-        tv.setText("SmsWatcher v1.3");
+        tv.setText(R.string.app_name + " " + R.string.app_ver);
         setContentView(tv);
         /**
         * IntentFilter filter = new IntentFilter( "android.provider.Telephony.SMS_RECEIVED" );

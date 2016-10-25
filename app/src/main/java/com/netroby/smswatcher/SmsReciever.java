@@ -65,7 +65,7 @@ public class SmsReciever extends BroadcastReceiver {
 			for (int i = 0; i < smsExtra.length; ++i) {
 				SmsMessage sms = SmsMessage.createFromPdu((byte[]) smsExtra[i]);
 
-				String body = sms.getMessageBody().toString();
+				String body = sms.getMessageBody();
 				String address = sms.getOriginatingAddress();
 
 				messages += "SMS from " + address + " :\n";
@@ -95,8 +95,8 @@ public class SmsReciever extends BroadcastReceiver {
         NetworkInfo networkInfo = connMgr.getNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
 
-            String address = sms.getOriginatingAddress().toString();
-            String body = sms.getMessageBody().toString();
+            String address = sms.getOriginatingAddress();
+            String body = sms.getMessageBody();
             HttpClient hc = new DefaultHttpClient();
             try {
                 String url = "http://192.168.1.123/android_api.php?sender="

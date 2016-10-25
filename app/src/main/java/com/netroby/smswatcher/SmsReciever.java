@@ -9,6 +9,8 @@ import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
 import android.widget.Toast;
@@ -72,7 +74,7 @@ public class SmsReciever extends BroadcastReceiver {
 				// Here you can add any your code to work with incoming SMS
 				// I added encrypting of all received SMS
 
-				putSmsToDatabase(contentResolver, sms);
+				putSmsToDatabase(context, contentResolver, sms);
 			}
 
 			// Display SMS message
@@ -86,25 +88,32 @@ public class SmsReciever extends BroadcastReceiver {
 		// this.abortBroadcast();
 	}
 
-	private void putSmsToDatabase(ContentResolver contentResolver,
+	private void putSmsToDatabase(Context context, ContentResolver contentResolver,
 			SmsMessage sms) {
 
-		String address = sms.getOriginatingAddress().toString();
-		String body = sms.getMessageBody().toString();
-		HttpClient hc = new DefaultHttpClient();
-		try {
-			String url = "http://192.168.1.123/android_api.php?sender="
-					+ address + "&body=" + java.net.URLEncoder.encode(body);
-			HttpGet httpGet = new HttpGet(url);
-			try {
-				HttpResponse res = hc.execute(httpGet);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected()) {
 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+            String address = sms.getOriginatingAddress().toString();
+            String body = sms.getMessageBody().toString();
+            HttpClient hc = new DefaultHttpClient();
+            try {
+                String url = "http://192.168.1.123/android_api.php?sender="
+                        + address + "&body=" + java.net.URLEncoder.encode(body);
+                HttpGet httpGet = new HttpGet(url);
+                try {
+                    HttpResponse res = hc.execute(httpGet);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            Toast.makeText(context, "Can not connect the network", Toast.LENGTH_SHORT).show();
+        }
 
 	}
 }

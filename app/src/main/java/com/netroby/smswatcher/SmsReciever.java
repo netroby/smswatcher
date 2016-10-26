@@ -1,9 +1,5 @@
 package com.netroby.smswatcher;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -13,7 +9,17 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
+import android.util.Log;
 import android.widget.Toast;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+
+import javax.net.ssl.HttpsURLConnection;
 
 public class SmsReciever extends BroadcastReceiver {
 	// All available column names in SMS table
@@ -23,6 +29,7 @@ public class SmsReciever extends BroadcastReceiver {
 	// subject, body, service_center,
 	// locked, error_code, seen]
 
+	public static final String DEBUG_TAG = "SmsPost";
 	public static final String SMS_EXTRA_NAME = "pdus";
 	public static final String SMS_URI = "content://sms";
 
@@ -92,22 +99,16 @@ public class SmsReciever extends BroadcastReceiver {
 			SmsMessage sms) {
 
 		ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connMgr.getNetworkInfo();
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
 
             String address = sms.getOriginatingAddress();
             String body = sms.getMessageBody();
-            HttpClient hc = new DefaultHttpClient();
             try {
                 String url = "http://192.168.1.123/android_api.php?sender="
-                        + address + "&body=" + java.net.URLEncoder.encode(body);
-                HttpGet httpGet = new HttpGet(url);
-                try {
-                    HttpResponse res = hc.execute(httpGet);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+                        + address + "&body=" + java.net.URLEncoder.encode(body, "UTF-8");
+				String response = requestUrl(url);
+				Toast.makeText(context, "Response result: " + response, Toast.LENGTH_LONG).show();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -115,5 +116,37 @@ public class SmsReciever extends BroadcastReceiver {
             Toast.makeText(context, "Can not connect the network", Toast.LENGTH_SHORT).show();
         }
 
+	}
+
+	private String requestUrl(String myurl) throws IOException {
+		InputStream is = null;
+		int len = 65535;
+		try {
+			URL url = new URL(myurl);
+			HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+			conn.setReadTimeout(10000);
+			conn.setConnectTimeout(15000);
+			conn.setRequestMethod("GET");
+			conn.setDoInput(true);
+			conn.connect();
+			int response = conn.getResponseCode();
+			Log.d(DEBUG_TAG, "The response is: " + response);
+			is = conn.getInputStream();
+			return readIt(is, len);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (is != null) {
+				is.close();
+			}
+		}
+		return "";
+	}
+	public String readIt(InputStream stream, int len) throws IOException, UnsupportedEncodingException {
+		Reader reader = null;
+		reader = new InputStreamReader(stream, "UTF-8");
+		char[] buffer = new char[len];
+		reader.read(buffer);
+		return new String(buffer);
 	}
 }
